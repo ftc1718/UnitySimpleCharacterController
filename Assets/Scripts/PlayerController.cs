@@ -3,11 +3,11 @@
 public class PlayerController : MonoBehaviour
 {
     public GameObject player;
-    public Camera cam;
-    public FixedJoystick leftJoystick;
+    Camera cam;
+    FixedJoystick leftJoystick;
 
     public float rotateSpeed = 0.5f;
-    public float moveSpeed = 2.5f;
+    public float moveSpeed = 4f;
 
     CharacterController characterController;
 
@@ -20,14 +20,34 @@ public class PlayerController : MonoBehaviour
 
     private void Start()
     {
-        if (player == null)
-            this.enabled = false;
-        else
+        if (player != null)
+        {
             characterController = player.GetComponent<CharacterController>();
+            if (characterController == null)
+            {
+                player.AddComponent<CharacterController>();
+                characterController = player.GetComponent<CharacterController>();
+                //characterController.height = characterControllerHeight;
+                //characterController.center = characterControllerCenter;
+            }
+            if (player.GetComponent<AnimatController>() == null)
+            {
+                player.AddComponent<AnimatController>();
+                player.GetComponent<AnimatController>().controller = this.gameObject;
+            }
+            cam = GetComponent<CameraController>().cam;
+            leftJoystick = GetComponent<CameraController>().leftJoystick;
+        }
     }
 
     private void Update()
     {
+        if (player == null)
+            return;
+
+        forward = 0;
+        strafe = 0;
+
         forward = Input.GetAxisRaw("Vertical");
         strafe = Input.GetAxisRaw("Horizontal");
 
@@ -59,7 +79,12 @@ public class PlayerController : MonoBehaviour
             player.transform.rotation = Quaternion.Slerp(player.transform.rotation, Quaternion.LookRotation(desiredMoveDirection), rotateSpeed);
             characterMovement = desiredMoveDirection.normalized;
 
-            characterController.Move(characterMovement * moveSpeed * Time.deltaTime);
+            if (strafe >= 0.8 || strafe <= -0.8 || forward >= 0.8 || forward <= -0.8)
+            {
+                characterMovement = desiredMoveDirection.normalized;
+
+                characterController.Move(characterMovement * moveSpeed * Time.deltaTime);
+            }
         }
     }
 

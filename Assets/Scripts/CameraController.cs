@@ -17,7 +17,7 @@ public class CameraController : MonoBehaviour
     public float distanceMax = 15f;
 
     public float cameraSensitivity = 250f;
-    public float climbSpeed = 4f;
+    //public float climbSpeed = 4f;
     public float cameraMoveSpeed = 10f;
 
     float x = 0.0f;
@@ -25,34 +25,45 @@ public class CameraController : MonoBehaviour
 
     Quaternion rotation = Quaternion.Euler(0, 0, 0);
 
-    bool toggle = true;
+    public bool freeCameraEnable = false;
 
     public FixedTouchField touchField;
-    FixedJoystick leftJoystick;
+    public FixedJoystick leftJoystick;
+
+    Vector3 freeCameraLookPosition;
 
     void Start()
     {
+        if (cam == null)
+            cam = Camera.main;
+        if (touchField == null)
+            touchField = GetComponentInChildren<FixedTouchField>();
+        if (leftJoystick == null)
+            leftJoystick = GetComponentInChildren<FixedJoystick>();
         Vector3 angles = cam.transform.eulerAngles;
         x = angles.y;
         y = angles.x;
-        leftJoystick = GetComponent<PlayerController>().leftJoystick;
+        freeCameraLookPosition = cam.ViewportToWorldPoint(new Vector3(0.5f, 0.5f, 2f));
+    }
+
+    private void OnApplicationQuit()
+    {
+       
     }
 
     void LateUpdate()
     {
         if (pivot)
         {
-            if (Input.GetKeyDown(KeyCode.T))
+            if (freeCameraEnable)
             {
-                toggle = !toggle;
-                GetComponent<PlayerController>().enabled = !(GetComponent<PlayerController>().enabled);
+                FreeCamera();
+                GetComponent<PlayerController>().enabled = false;
             }
             else
             {
-                if (toggle)
-                    RotateCamera();
-                else           
-                    FreeCamera();
+                RotateCamera();
+                GetComponent<PlayerController>().enabled = true;
             }
         }
         else
@@ -63,13 +74,15 @@ public class CameraController : MonoBehaviour
 
     void RotateCamera()
     {
+        Input.simulateMouseWithTouches = false;
+
         if (Input.GetMouseButton(1))
         {
-            x += Input.GetAxis("Mouse X") * xRotateSpeed * zoomDistance * 0.02f;
+            x += Input.GetAxis("Mouse X") * xRotateSpeed * 0.02f;
             y -= Input.GetAxis("Mouse Y") * yRotateSpeed * 0.02f;
         }
 
-        if(touchField != null && touchField.TouchDist != Vector2.zero)
+        if (touchField != null && touchField.TouchDist != Vector2.zero)
         {
             x += touchField.TouchDist.x;
             y -= touchField.TouchDist.y;
@@ -80,7 +93,7 @@ public class CameraController : MonoBehaviour
 
         zoomDistance -= Input.GetAxis("Mouse ScrollWheel") * 5;
 
-        if(Input.touchCount == 2 && leftJoystick != null && leftJoystick.inputVector == Vector2.zero)
+        if (Input.touchCount == 2 && leftJoystick != null && leftJoystick.inputVector == Vector2.zero)
         {
             Touch touchZero = Input.GetTouch(0);
             Touch touchOne = Input.GetTouch(1);
@@ -92,7 +105,7 @@ public class CameraController : MonoBehaviour
 
             float deltaMagnitudeDiff = prevTouchDeltaMag - touchDeltaMag;
 
-            zoomDistance -= deltaMagnitudeDiff;
+            zoomDistance -= deltaMagnitudeDiff / 20f;
         }
 
         zoomDistance = Mathf.Clamp(zoomDistance, distanceMin, distanceMax);
@@ -106,13 +119,15 @@ public class CameraController : MonoBehaviour
 
     void FreeCamera()
     {
+        Input.simulateMouseWithTouches = false;
+
         if (Input.GetMouseButton(1))
         {
             x += Input.GetAxis("Mouse X") * cameraSensitivity * Time.deltaTime;
             y -= Input.GetAxis("Mouse Y") * cameraSensitivity * Time.deltaTime;
         }
 
-        if(touchField != null && touchField.TouchDist != Vector2.zero)
+        if (touchField != null && touchField.TouchDist != Vector2.zero)
         {
             x += touchField.TouchDist.x;
             y -= touchField.TouchDist.y;
@@ -120,12 +135,22 @@ public class CameraController : MonoBehaviour
 
         y = Mathf.Clamp(y, -90, 90);
         rotation = Quaternion.Euler(y, x, 0);
+        cam.transform.rotation = rotation;
+
+        float vertical = 0f;
+        float horizontal = 0f;
+
+        y = Mathf.Clamp(y, -90, 90);
+        rotation = Quaternion.Euler(y, x, 0);
         cam.transform.localRotation = rotation;
 
-        float vertical = Input.GetAxis("Vertical");
-        float horizontal = Input.GetAxis("Horizontal");
+        if ((Input.GetMouseButton(1)))
+        {
+            vertical = Input.GetAxis("Vertical");
+            horizontal = Input.GetAxis("Horizontal");
+        }
 
-        if(leftJoystick.inputVector != Vector2.zero)
+        if (leftJoystick.inputVector != Vector2.zero)
         {
             vertical += leftJoystick.inputVector.y;
             horizontal += leftJoystick.inputVector.x;
