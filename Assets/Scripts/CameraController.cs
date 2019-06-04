@@ -4,6 +4,8 @@ public class CameraController : MonoBehaviour
 {
 
     public Camera cam;
+    public LayerMask layerMask;
+    public float smoothSpeed = 10f;
 
     public Transform pivot;
     public float zoomDistance = 5.0f;
@@ -113,8 +115,24 @@ public class CameraController : MonoBehaviour
         Vector3 negDistance = new Vector3(0.0f, 0.0f, -zoomDistance);
         Vector3 position = rotation * negDistance + pivot.position;
 
-        cam.transform.rotation = rotation;
-        cam.transform.position = position;
+        cam.transform.rotation = Quaternion.Lerp(cam.transform.rotation, rotation, smoothSpeed * Time.deltaTime);
+        //cam.transform.rotation = rotation;
+        //cam.transform.position = position;
+
+        RaycastHit hitInfo;
+        Vector3 velocity = Vector3.zero;
+        if (Physics.Linecast(pivot.position, position, out hitInfo, layerMask))
+        {
+            Debug.Log("Blocked..." + hitInfo.collider.name + " " + hitInfo.normal);
+            //cam.transform.position = hitInfo.point + new Vector3(0, 0.1f, 0);
+            cam.transform.position = Vector3.Lerp(cam.transform.position, hitInfo.point + new Vector3(0, 0.1f, 0), smoothSpeed * Time.deltaTime);
+        }
+        else
+        {
+            Debug.Log("Not Blocked..." + smoothSpeed * Time.deltaTime);
+            //cam.transform.position = position;
+            cam.transform.position = Vector3.Lerp(cam.transform.position, position, smoothSpeed * Time.deltaTime);
+        }
     }
 
     void FreeCamera()
