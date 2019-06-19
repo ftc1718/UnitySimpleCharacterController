@@ -117,8 +117,8 @@ public class CameraController : MonoBehaviour
         Vector3 negDistance = new Vector3(0.0f, 0.0f, -zoomDistance);
         Vector3 position = rotation * negDistance + pivot.position;
 
-        //cam.transform.rotation = Quaternion.Lerp(cam.transform.rotation, rotation, smoothSpeed * Time.deltaTime);
-        cam.transform.rotation = rotation;
+        cam.transform.rotation = Quaternion.Lerp(cam.transform.rotation, rotation, smoothSpeed * Time.deltaTime);
+        //cam.transform.rotation = rotation;
         //cam.transform.position = position;
 
         RaycastHit hitInfo;
@@ -132,8 +132,10 @@ public class CameraController : MonoBehaviour
         else
         {
             //Debug.Log("Not Blocked..." + smoothSpeed * Time.deltaTime);
-            cam.transform.position = position;
+            //cam.transform.position = position;
             //cam.transform.position = Vector3.Lerp(cam.transform.position, position, smoothSpeed * Time.deltaTime);
+            cam.transform.position = Vector3.Slerp(cam.transform.position - pivot.position, position - pivot.position, smoothSpeed * Time.deltaTime);
+            cam.transform.position += pivot.position;
         }
     }
 
